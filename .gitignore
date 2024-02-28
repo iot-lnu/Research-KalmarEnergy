@@ -1,0 +1,14 @@
+.DS_Store
+KE_env
+data
+
+# pyenv
+.python-version
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Byte-compiled / optimized / DLL files
+__pycache__
+*.py[cod]
+*$py
