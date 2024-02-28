@@ -2,7 +2,7 @@
 
 ## Initial data cleaning and pre-processing 
 
-All scripts for data cleaning and pre-processing can be found in utils/KEKEprocessing.py script 
+All scripts for data cleaning and pre-processing can be found in utils/KEprocessing.py script 
 
 To get the final version of the dataframe in your notebook use the foloowing code. 
 This assumes that you have the initial data files in your data folder. 
