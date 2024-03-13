@@ -4,31 +4,39 @@ import pandas as pd
 def correct_stenso(area_name):
     return 'Stensö' if area_name.startswith('Stens') else area_name
 
-# Combine all the data files, correct 2023 columns
-def consolidate_data(filenames, fixed_encoding=True):
-    encoding = 'ISO-8859-1' if fixed_encoding else None
-  
-    # Step 1: Read all CSV files into DataFrames with optional ISO-8859-1 encoding
-    dfs = [pd.read_csv(filename, encoding=encoding) for filename in filenames]
-
-    # Step 2: Rename columns only for the 2023 dataset
-    dfs[-1].columns = dfs[-1].columns.str.replace('VALUE_', 'HOUR_')
-    dfs[-1].rename(columns={'ID_FROM_DATE': 'DATE'}, inplace=True)
+def consolidate_data(filenames, dataset_type, fixed_encoding=True):
+    assert dataset_type in ['power', 'price'], "dataset_type must be either 'power' or 'price'"
     
-    # Step 3: Add a 'YEAR' column
-    for df, filename in zip(dfs, filenames):
-        df['YEAR'] = filename[-8:-4]  # extract year from filenames
+    encoding = 'ISO-8859-1' if fixed_encoding else None
+    dfs = [pd.read_csv(filename, encoding=encoding) for filename in filenames]
+    
+    if dataset_type == 'power':
+        # Specific steps for the power dataset
+        dfs[-1].columns = dfs[-1].columns.str.replace('VALUE_', 'HOUR_')
+        dfs[-1].rename(columns={'ID_FROM_DATE': 'DATE'}, inplace=True)
+        
+        for df, filename in zip(dfs, filenames):
+            df['YEAR'] = filename[-8:-4]  # Extract year from filenames
+            
+        combined_df = pd.concat(dfs, ignore_index=True)
+        combined_df['AREA'] = combined_df['AREA'].apply(correct_stenso)
+        combined_df['DATE'] = pd.to_datetime(combined_df['DATE'])
+        
+        return combined_df
+    
+    elif dataset_type == 'price':
+        # Specific steps for the price dataset
+        combined_prices_df = pd.concat(dfs, ignore_index=True)
+        combined_prices_df.drop(columns=['index'], inplace=True, errors='ignore')
+        combined_prices_df['timestamp_utc'] = pd.to_datetime(combined_prices_df['timestamp_utc']).dt.tz_localize(None)
+        combined_prices_df.rename(columns={'timestamp_utc': 'DateTime', 'EUR_per_MWh': 'Price'}, inplace=True)
+        combined_prices_df_sorted = combined_prices_df.sort_values('DateTime')
+        combined_prices_df_sorted = combined_prices_df_sorted.reset_index(drop=True)
+        
+        # Print or save the sorted DataFrame if needed here
+        
+        return combined_prices_df_sorted
 
-    # Concatenate all DataFrames into one and reset the index
-    combined_df = pd.concat(dfs, ignore_index=True)
-
-    # Apply the function to the 'AREA' column
-    combined_df['AREA'] = combined_df['AREA'].apply(correct_stenso)
-
-    # Convert 'DATE' to datetime format
-    combined_df['DATE'] = pd.to_datetime(combined_df['DATE'])
-
-    return combined_df
 
 def replace_invalid_with_row_mean(df, residential_threshold, commercial_threshold, min_non_nan=3):
     # Operate only on the hour columns
