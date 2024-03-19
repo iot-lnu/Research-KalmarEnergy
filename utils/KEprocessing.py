@@ -33,8 +33,6 @@ def consolidate_data(filenames, dataset_type, fixed_encoding=True):
         combined_prices_df_sorted = combined_prices_df.sort_values('DateTime')
         combined_prices_df_sorted = combined_prices_df_sorted.reset_index(drop=True)
         
-        # Print or save the sorted DataFrame if needed here
-        
         return combined_prices_df_sorted
 
 
@@ -62,14 +60,14 @@ def replace_invalid_with_row_mean(df, residential_threshold, commercial_threshol
 
 def prepare_final_df():
     filenames = ['data/lnu_2020.csv', 'data/lnu_2021.csv', 'data/lnu_2022.csv', 'data/lnu_2023.csv']
-    combined_df = consolidate_data(filenames)
+    combined_df = consolidate_data(filenames, 'power')
 
     # Define the hourly columns
     hourly_columns = [f'HOUR_{i}' for i in range(24)]
 
     # Calculate the sum of the hourly consumption for each record and create a new column 'One_Day_Power'
     combined_df['One_Day_Power'] = combined_df[hourly_columns].sum(axis=1)
-     # Calculate the sum of the hourly consumption being NaN and save to a new column
+    # Calculate the sum of the hourly consumption being NaN and save to a new column
     combined_df['One_Day_Power_NaN'] = combined_df[hourly_columns].isna().sum(axis=1)
     
     # Define your thresholds
