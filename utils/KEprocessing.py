@@ -81,4 +81,57 @@ def prepare_final_df():
     combined_df_noNA.to_csv('data/combined_df_noNA.csv')
     
     return(combined_df_noNA)
+
+
+def reshape_power_df(combined_df):
+    # Assuming combined_df is already loaded and has the columns 'DATE', 'HOUR_0', 'HOUR_1', ..., 'HOUR_23'
+    # Convert the DATE column to datetime data type
+    combined_df['DATE'] = pd.to_datetime(combined_df['DATE'])
+
+    # Melt the hourly columns into two new columns 'Time' and 'Power_Consumption'
+    combined_df_long = combined_df.melt(id_vars=['CUSTOMER', 'AREA', 'ISPRIVATEPERSON', 'DATE', 'YEAR', 'One_Day_Power', 'One_Day_Power_NaN'],
+                                        value_vars=[f'HOUR_{i}' for i in range(24)],
+                                        var_name='Time',
+                                        value_name='Power_Consumption')
+
+    # Convert the 'Time' column to represent the actual time of day
+    combined_df_long['Time'] = combined_df_long['Time'].str.extract('(\d+)').astype(int)
+    combined_df_long['Time'] = pd.to_timedelta(combined_df_long['Time'], unit='h')
+
+    # Create 'DateTime' by adding 'Time' to 'DATE'
+    combined_df_long['DateTime'] = combined_df_long['DATE'] + combined_df_long['Time']
+
+    # Convert the DateTime column to datetime data type
+    combined_df_long['DateTime'] = pd.to_datetime(combined_df_long['DateTime'])
+
+    # Now you can drop the 'DATE' and 'Time' columns or other columns if they are no longer needed
+    combined_df_long = combined_df_long.drop(['DATE', 'Time','YEAR',], axis=1)
+
+    # Reorder columns to have 'DateTime' at the front if desired
+    combined_df_long = combined_df_long[['DateTime', 'CUSTOMER', 'AREA', 'ISPRIVATEPERSON', 'Power_Consumption','One_Day_Power','One_Day_Power_NaN']]
+
+    # Sort the DataFrame by the 'DateTime' column to ensure that the dates and times are in order
+    combined_df_long.sort_values(by='DateTime', inplace=True)
+
+    # Reset the index of the DataFrame after sorting
+    combined_df_long.reset_index(drop=True, inplace=True)
+
+    # Check the result
+    print(combined_df_long.head())
+    combined_df_long.to_csv('data/combined_df_long.csv', index=False)
     
+    return combined_df_long
+    
+def merge_weather_price (power_df, weather_df, price_df ):
+    
+    from functools import reduce
+
+    # List of DataFrames to merge
+    dataframes = [power_df, weather_df, price_df]
+
+    # Merge all DataFrames on 'DateTime'
+    final_combined_df = reduce(lambda left, right: pd.merge(left, right, on='DateTime', how='outer'), dataframes)
+        
+    final_combined_df.to_csv('data/final_df.csv')
+    
+    return final_combined_df
