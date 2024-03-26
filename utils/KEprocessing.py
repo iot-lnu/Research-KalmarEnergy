@@ -1,4 +1,5 @@
 import pandas as pd
+from functools import reduce
 
 # Function to correct the 'Stensö' variations
 def correct_stenso(area_name):
@@ -124,8 +125,6 @@ def reshape_power_df(combined_df):
     
 def merge_weather_price (power_df, weather_df, price_df ):
     
-    from functools import reduce
-
     # List of DataFrames to merge
     dataframes = [power_df, weather_df, price_df]
 
