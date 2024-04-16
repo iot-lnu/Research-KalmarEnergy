@@ -123,11 +123,13 @@ def reshape_power_df(combined_df):
     
     return combined_df_long
     
-def merge_weather_price (power_df, weather_df, price_df ):
+def merge_weather_price(power_df, weather_df, price_df):
     
     # List of DataFrames to merge
     dataframes = [power_df, weather_df, price_df]
-
+    print(power_df.head())
+    print(weather_df.head())
+    print(price_df.head())
     # Merge all DataFrames on 'DateTime'
     final_combined_df = reduce(lambda left, right: pd.merge(left, right, on='DateTime', how='outer'), dataframes)
         
